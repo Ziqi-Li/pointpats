@@ -20,7 +20,7 @@ import sys, os
 import sphinx_bootstrap_theme
 
 
-sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('../../'))
 
 import pointpats
 
@@ -288,8 +288,6 @@ intersphinx_mapping = {"python": ('https://docs.python.org/3', None),
                        'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
                        'matplotlib':("https://matplotlib.org/", None),
                        'opencv-contrib-python':("https://docs.opencv.org/3.4/index.html", None),
-                       'KDEpy':("https://kdepy.readthedocs.io/en/latest/", None),
-                       'statsmodels':("https://www.statsmodels.org/stable/", None),
                        }
 
 

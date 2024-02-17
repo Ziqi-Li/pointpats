@@ -11,7 +11,7 @@ __all__ = ["area", "bbox", "contains", "k_neighbors", "build_best_tree", "prepar
 # Utilities and dispatching                                   #
 # ------------------------------------------------------------#
 
-TREE_TYPES = (spatial.KDTree, Arc_KDTree)
+TREE_TYPES = (spatial.KDTree, spatial.cKDTree, Arc_KDTree)
 try:
     from sklearn.neighbors import KDTree, BallTree
 
@@ -25,7 +25,6 @@ HULL_TYPES = (
 )
 
 ## Define default dispatches and special dispatches without GEOS
-
 
 ### AREA
 @singledispatch
@@ -42,7 +41,7 @@ def area(shape):
 
 
 @area.register
-def _(shape: spatial.ConvexHull):
+def _(shape: spatial.qhull.ConvexHull):
     """
     If a shape is a convex hull from scipy,
     assure it's 2-dimensional and then use its volume.
@@ -85,7 +84,7 @@ def _(shape: numpy.ndarray):
 
 
 @bbox.register
-def _(shape: spatial.ConvexHull):
+def _(shape: spatial.qhull.ConvexHull):
     """
     For scipy.spatial.ConvexHulls, compute the bounding box from
     their boundary points.
@@ -132,7 +131,7 @@ def _(shape: spatial.Delaunay, x: float, y: float):
 
 
 @contains.register
-def _(shape: spatial.ConvexHull, x: float, y: float):
+def _(shape: spatial.qhull.ConvexHull, x: float, y: float):
     """
     For convex hulls, convert their exterior first into a Delaunay triangulation
     and then use the delaunay dispatcher.
@@ -174,7 +173,7 @@ def _(shape: numpy.ndarray):
 
 
 @centroid.register
-def _(shape: spatial.ConvexHull):
+def _(shape: spatial.qhull.ConvexHull):
     """
     Treat convex hulls as arrays of points
     """
@@ -215,56 +214,52 @@ try:
         """
         return numpy.asarray(list(shape.centroid.coords)).squeeze()
 
+
 except ModuleNotFoundError:
     HAS_SHAPELY = False
 
 
 try:
-    import shapely
+    import pygeos
 
-    from packaging.version import Version
-
-    if Version(shapely.__version__) < Version("2"):
-        HAS_SHAPELY2 = False
-    else:
-        HAS_SHAPELY2 = True
-
-    HULL_TYPES = (*HULL_TYPES, shapely.Geometry)
+    HAS_PYGEOS = True
+    HULL_TYPES = (*HULL_TYPES, pygeos.Geometry)
 
     @area.register
-    def _(shape: shapely.Geometry):
+    def _(shape: pygeos.Geometry):
         """
-        If we know we're working with a shapely polygon,
-        then use shapely.area
+        If we know we're working with a pygeos polygon,
+        then use pygeos.area
         """
-        return shapely.area(shape)
+        return pygeos.area(shape)
 
     @contains.register
-    def _(shape: shapely.Geometry, x: float, y: float):
+    def _(shape: pygeos.Geometry, x: float, y: float):
         """
-        If we know we're working with a shapely polygon,
-        then use shapely.within casting the points to a shapely object too
+        If we know we're working with a pygeos polygon,
+        then use pygeos.within casting the points to a pygeos object too
         """
-        return shapely.within(shapely.points((x, y)), shape)
+        return pygeos.within(pygeos.points((x, y)), shape)
 
     @bbox.register
-    def _(shape: shapely.Geometry):
+    def _(shape: pygeos.Geometry):
         """
-        If we know we're working with a shapely polygon,
-        then use shapely.bounds
+        If we know we're working with a pygeos polygon,
+        then use pygeos.bounds
         """
-        return shapely.bounds(shape)
+        return pygeos.bounds(shape)
 
     @centroid.register
-    def _(shape: shapely.Geometry):
+    def _(shape: pygeos.Geometry):
         """
-        if we know we're working with a shapely polygon,
-        then use shapely.centroid
+        if we know we're working with a pygeos polygon,
+        then use pygeos.centroid
         """
-        return shapely.coordinates.get_coordinates(shapely.centroid(shape)).squeeze()
+        return pygeos.coordinates.get_coordinates(pygeos.centroid(shape)).squeeze()
+
 
 except ModuleNotFoundError:
-    HAS_SHAPELY2 = False
+    HAS_PYGEOS = False
 
 # ------------------------------------------------------------#
 # Constructors for trees, prepared inputs, & neighbors        #
@@ -277,6 +272,7 @@ def build_best_tree(coordinates, metric):
     Chooses from:
     1. sklearn.KDTree if available and metric is simple
     2. sklearn.BallTree if available and metric is complicated
+    3. scipy.spatial.cKDTree if nothing else
 
     Parameters
     ----------
@@ -304,22 +300,13 @@ def build_best_tree(coordinates, metric):
         Otherwise, an error will be raised.
     """
     coordinates = numpy.asarray(coordinates)
-    tree = spatial.KDTree
+    tree = spatial.cKDTree
     try:
-        import sklearn
         from sklearn.neighbors import KDTree, BallTree
-        from packaging.version import Version
 
-        if Version(sklearn.__version__) == Version("1.3.0"):
-            kdtree_valid_metrics = KDTree.valid_metrics()
-            balltree_valid_metrics = BallTree.valid_metrics()
-        else:
-            kdtree_valid_metrics = KDTree.valid_metrics
-            balltree_valid_metrics = BallTree.valid_metrics
-
-        if metric in kdtree_valid_metrics:
+        if metric in KDTree.valid_metrics:
             tree = lambda coordinates: KDTree(coordinates, metric=metric)
-        elif metric in balltree_valid_metrics:
+        elif metric in BallTree.valid_metrics:
             tree = lambda coordinates: BallTree(coordinates, metric=metric)
         elif callable(metric):
             warnings.warn(
@@ -331,8 +318,8 @@ def build_best_tree(coordinates, metric):
         else:
             raise KeyError(
                 f"Metric {metric} not found in set of available types."
-                f"BallTree metrics: {balltree_valid_metrics}, and"
-                f"scikit KDTree metrics: {kdtree_valid_metrics}."
+                f"BallTree metrics: {BallTree.valid_metrics}, and"
+                f"scikit KDTree metrics: {KDTree.valid_metrics}."
             )
     except ModuleNotFoundError as e:
         if metric not in ("l2", "euclidean"):
@@ -402,8 +389,8 @@ def prepare_hull(coordinates, hull=None):
         - a bounding box encoded in a numpy array as numpy.array([xmin, ymin, xmax, ymax])
         - an (N,2) array of points for which the bounding box will be computed & used
         - a shapely polygon/multipolygon
-        - a shapely geometry
-        - a scipy.spatial.ConvexHull
+        - a pygeos geometry
+        - a scipy.spatial.qhull.ConvexHull
     """
     if isinstance(hull, numpy.ndarray):
         assert len(hull) == 4, f"bounding box provided is not shaped correctly! {hull}"
@@ -414,18 +401,18 @@ def prepare_hull(coordinates, hull=None):
     if HAS_SHAPELY:  # protect the isinstance check if import has failed
         if isinstance(hull, (_ShapelyPolygon, _ShapelyMultiPolygon)):
             return hull
-    if HAS_SHAPELY2:
-        if isinstance(hull, shapely.Geometry):
+    if HAS_PYGEOS:
+        if isinstance(hull, pygeos.Geometry):
             return hull
     if isinstance(hull, str):
         if hull.startswith("convex"):
             return spatial.ConvexHull(coordinates)
         elif hull.startswith("alpha") or hull.startswith("α"):
             return alpha_shape_auto(coordinates)
-    elif isinstance(hull, spatial.ConvexHull):
+    elif isinstance(hull, spatial.qhull.ConvexHull):
         return hull
     raise ValueError(
         f"Hull type {hull} not in the set of valid options:"
         f" (None, 'bbox', 'convex', 'alpha', 'α', "
-        f" shapely.geometry.Polygon, shapely.Geometry)"
+        f" shapely.geometry.Polygon, pygeos.Geometry)"
     )

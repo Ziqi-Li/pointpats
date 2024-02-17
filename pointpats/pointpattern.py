@@ -203,17 +203,14 @@ class PointPattern(object):
             for part in self.window.parts:
                 p = Polygon(np.asarray(part))
                 patches.append(p)
-            ax.add_collection(
-                PatchCollection(patches, facecolor="none", edgecolor="k", alpha=0.3)
-            )
+            ax.add_collection(PatchCollection(patches, facecolor='w',
+                              edgecolor='k', alpha=0.3))
         if hull:
             patches = []
             p = Polygon(self.hull)
             patches.append(p)
-            ax.add_collection(
-                PatchCollection(patches, facecolor="none", edgecolor="k", alpha=0.3)
-            )
-        ax.set_aspect("equal")
+            ax.add_collection(PatchCollection(patches, facecolor='w',
+                              edgecolor='k', alpha=0.3))
 
         # plt.plot(x, y, '.')
         if get_ax:
@@ -421,9 +418,9 @@ class PointPattern(object):
         if k < 1:
             raise ValueError('k must be at least 1')
         try:
-            nn = self.tree.query(np.asarray(other.points), k=k)
+            nn = self.tree.query(other.points, k=k)
         except:
-            nn = self.tree.query(np.asarray(other), k=k)
+            nn = self.tree.query(other, k=k)
         return nn[1], nn[0]
 
     def explode(self, mark):

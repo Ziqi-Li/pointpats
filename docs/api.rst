@@ -46,17 +46,6 @@ Centrography
     skyum
     dtot
 
-
-.. _density_api:
-
-Density
--------
-
-.. autosummary::
-   :toctree: generated/
-
-    plot_density
-
 .. _quadrat_api:
 
 Quadrat Based Statistics
@@ -120,16 +109,7 @@ Space-Time Interaction Tests
    :toctree: generated/
 
    SpaceTimeEvents
-   Knox
-   KnoxLocal
+   knox
    mantel
    jacquez
    modified_knox
-
-Visualization
----------------
-
-.. autosummary::
-   :toctree: generated/
-
-   plot_density

@@ -1,10 +1,10 @@
 # pointpats: Point Pattern Analysis in PySAL
 
 [![Continuous Integration](https://github.com/pysal/pointpats/actions/workflows/tests.yaml/badge.svg)](https://github.com/pysal/pointpats/actions/workflows/tests.yaml)
-[![codecov](https://codecov.io/gh/pysal/pointpats/branch/main/graph/badge.svg)](https://codecov.io/gh/pysal/pointpats)
-[![Documentation](https://img.shields.io/static/v1.svg?label=docs&message=current&color=9cf)](http://pysal.org/pointpats/)
+[![codecov](https://codecov.io/gh/pysal/pointpats/branch/master/graph/badge.svg)](https://codecov.io/gh/pysal/pointpats)
+[![Documentation Status](https://readthedocs.org/projects/pointpats/badge/?version=latest)](https://pointpats.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/pointpats.svg)](https://badge.fury.io/py/pointpats)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7706219.svg)](https://doi.org/10.5281/zenodo.7706219)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3265637.svg)](https://doi.org/10.5281/zenodo.3265637)
 
 Statistical analysis of planar point patterns.
 
@@ -22,7 +22,7 @@ module.
 ## Documentation
 
 Online documentation is available
-[here](http://pysal.org/pointpats/).
+[here](https://pointpats.readthedocs.io).
 
 ## Examples
 
@@ -58,24 +58,18 @@ To search for or report bugs, please see pointpats'
 ##  BibTeX Citation
 
 ```
-@software{wei_kang_2023_7706219,
-  author       = {Wei Kang and
-                  Levi John Wolf and
-                  Sergio Rey and
+@misc{sergio_rey_2019_3265637,
+  author       = {Sergio Rey and
+                  Wei Kang and
                   Hu Shao and
+                  Levi John Wolf and
                   Mridul Seth and
-                  Martin Fleischmann and
-                  Sugam Srivastava and
                   James Gaboardi and
-                  Giovanni Palla and
-                  Dani Arribas-Bel and
-                  Qiusheng Wu},
-  title        = {pysal/pointpats: pointpats 2.3.0},
-  month        = mar,
-  year         = 2023,
-  publisher    = {Zenodo},
-  version      = {v2.3.0},
-  doi          = {10.5281/zenodo.7706219},
-  url          = {https://doi.org/10.5281/zenodo.7706219}
+                  Dani Arribas-Bel},
+  title        = {pysal/pointpats: pointpats 2.1.0},
+  month        = jul,
+  year         = 2019,
+  doi          = {10.5281/zenodo.3265637},
+  url          = {https://doi.org/10.5281/zenodo.3265637}
 }
 ```
